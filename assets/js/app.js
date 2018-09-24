@@ -10,17 +10,21 @@ import css from "../css/app.css";
 // Import dependencies
 //
 import "phoenix_html";
+import $ from 'jquery';
 
 // Import local files
 //
 // Local files can be imported directly using relative paths, for example:
-// import socket from "./socket"
+import socket from "./socket";
 import hangman_init from "./hangman";
 
-window.addEventListener("load", (_ev) => {
+function start() {
   let root = document.getElementById('root');
   if (root) {
-    hangman_init(root);
+    let channel = socket.channel("games:" + window.gameName, {});
+    hangman_init(root, channel);
   }
-});
+}
+
+$(start);
 

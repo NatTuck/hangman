@@ -26,119 +26,67 @@ Incidental state:
  */
 
 
-export default function hangman_init(root) {
-    ReactDOM.render(<Hangman />, root);
+export default function hangman_init(root, channel) {
+    ReactDOM.render(<Hangman channel={channel} />, root);
 }
 
 class Hangman extends React.Component {
-  constructor(params) {
-    super(params);
+  constructor(props) {
+    super(props);
 
-    this.state = {
-      word: randomWords(),
-      guesses: ["a", "z"],
-      max_lives: 10,
-    };
+    this.channel = props.channel;
+    this.state = { skel: [], goods: [], bads: [], max: 10 };
+
+    this.channel.join()
+        .receive("ok", this.gotView.bind(this))
+        .receive("error", resp => { console.log("Unable to join", resp) });
   }
 
-  livesLeft() {
-    let good_letters = this.state.word.split("");
-    let bad_guesses = _.filter(
-      this.state.guesses,
-      (guess) => {
-        return !_.includes(good_letters, guess);
-      }
-    ).length;
-
-    return this.state.max_lives - bad_guesses;
+  gotView(view) {
+    console.log("new view", view);
+    this.setState(view.game);
   }
 
-  gameIsOver() {
-    return !(this.livesLeft() > 0);
-  }
-
-  winnerIsYou() {
-    let word_letters = this.state.word.split("");
-    let missing = _.difference(
-      word_letters, this.state.guesses);
-    return missing.length == 0;
-  }
-
-  setGuesses(guesses) {
-    this.setState(_.assign(
-      {},
-      this.state,
-      { guesses: guesses }
-    ));
-  }
-
-  guessesText() {
-    this.state.guesses.join("");
+  sendGuess(ev) {
+    this.channel.push("guess", { letter: ev.key })
+        .receive("ok", this.gotView.bind(this));
   }
 
   render() {
-    if (this.gameIsOver()) {
-      return <p>You lose.</p>;
-    }
-
-    if (this.winnerIsYou()) {
-      return <p>You win.</p>;
-    }
-
     return <div>
       <div className="row">
         <div className="column">
-          <Word word={this.state.word}
-                guesses={this.state.guesses} />
+          <Word skel={this.state.skel} />
         </div>
         <div className="column">
-          <p>Lives Left:
-            {this.livesLeft()}
-          </p>
+          <p>Lives Left: {this.state.max - this.state.bads.length}</p>
         </div>
       </div>
       <div className="row">
         <div className="column">
-          <Guesses guesses={this.state.guesses} />
+          <Guesses bads={this.state.bads} />
         </div>
         <div className="column">
-          <InputBox root={this} />
+          <InputBox guess={this.sendGuess.bind(this)} />
         </div>
       </div>
     </div>;
   }
 }
 
-function Word(params) {
-  let { word, guesses } = params;
-  let letters = _.map(word.split(""), (letter) => {
-    if (_.includes(guesses, letter)) {
-      return letter;
-    }
-    else {
-      return "_";
-    }
-  });
-
-  let text = letters.join(" ");
+function Word(props) {
+  let text = props.skel.join(" ");
   return <p>{ text }</p>;
 }
 
-function Guesses(params) {
-  let text = params.guesses.join(" ");
+function Guesses(props) {
+  let text = props.bads.join(" ");
   return <p>{ text }</p>;
 }
 
-function InputBox(params) {
-  let { root } = params;
-
-  function set_guesses(ev) {
-    let guesses = ev.target.value.split("");
-    root.setGuesses(guesses);
-  }
-
-  return <input type="text"
-                value={root.guessesText()}
-                onChange={set_guesses}
-  />;
+function InputBox(props) {
+  return <div>
+    <p>Type Your Guesses</p>
+    <p><input type="text" onKeyPress={props.guess} /></p>
+  </div>;
 }
