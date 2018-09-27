@@ -12,6 +12,7 @@ defmodule Hangman.Application do
       HangmanWeb.Endpoint,
       # Starts a worker by calling: Hangman.Worker.start_link(arg)
       # {Hangman.Worker, arg},
+      Hangman.BackupAgent,
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
