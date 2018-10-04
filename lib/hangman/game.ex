@@ -25,11 +25,16 @@ defmodule Hangman.Game do
   def client_view(game, user) do
     ws = String.graphemes(game.word)
     gs = game.guesses
+    ps = game.players
+    cd = :os.system_time(:milli_seconds) - (ps[user].cooldown || 0)
+
     %{
       skel: skeleton(ws, gs),
       goods: Enum.filter(gs, &(Enum.member?(ws, &1))),
       bads: Enum.filter(gs, &(!Enum.member?(ws, &1))),
       max: max_guesses(),
+      players: ps,
+      cooldown: max(cd, 0),
     }
   end
 

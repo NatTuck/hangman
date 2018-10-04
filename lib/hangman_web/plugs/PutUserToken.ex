@@ -8,7 +8,7 @@ defmodule HangmanWeb.Plugs.PutUserToken do
       token = Phoenix.Token.sign(conn, "user socket", user)
       assign(conn, :user_token, token)
     else
-      conn
+      assign(conn, :user_token, "")
     end
   end
 end
