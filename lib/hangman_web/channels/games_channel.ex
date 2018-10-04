@@ -4,25 +4,19 @@ defmodule HangmanWeb.GamesChannel do
   alias Hangman.Game
   alias Hangman.BackupAgent
 
-  def join("games:" <> name, payload, socket) do
+  def join("games:" <> game, payload, socket) do
     if authorized?(payload) do
-      game = BackupAgent.get(name) || Game.new()
-      socket = socket
-      |> assign(:game, game)
-      |> assign(:name, name)
-      BackupAgent.put(name, game)
-      {:ok, %{"join" => name, "game" => Game.client_view(game)}, socket}
+      socket = assign(socket, :game, game)
+      view = GameServer.view(game, socket.assigns[:user])
+      {:ok, %{"join" => game, "game" => view}, socket}
     else
       {:error, %{reason: "unauthorized"}}
     end
   end
 
   def handle_in("guess", %{"letter" => ll}, socket) do
-    name = socket.assigns[:name]
-    game = Game.guess(socket.assigns[:game], ll)
-    socket = assign(socket, :game, game)
-    BackupAgent.put(name, game)
-    {:reply, {:ok, %{ "game" => Game.client_view(game)}}, socket}
+    view = GameServer.guess(socket.assigns[:game], socket.assigns[:user], ll)
+    {:reply, {:ok, %{ "game" => view}}, socket}
   end
 
   # Add authorization logic here as required.

@@ -2,11 +2,27 @@ defmodule Hangman.Game do
   def new do
     %{
       word: next_word(),
-      guesses: [],
+      guesses: MapSet.new(),
+      players: %{},
     }
   end
 
-  def client_view(game) do
+  def new(players) do
+    players = Enum.map players, fn {name, info} ->
+      {name, %{ score: info.score || 0 }}
+    end
+    Map.put(new(), :players, Enum.into(players, %{}))
+  end
+
+  def default_player() do
+    %{
+      score: 0,
+      guesses: MapSet.new(),
+      cooldown: nil,
+    }
+  end
+
+  def client_view(game, user) do
     ws = String.graphemes(game.word)
     gs = game.guesses
     %{
@@ -27,17 +43,16 @@ defmodule Hangman.Game do
     end
   end
 
-  def guess(game, letter) do
-    if letter == "z" do
-      raise "That's not a real letter"
-    end
+  def guess(game, player, letter) do
+    guesses = MapSet.put(game.guesses, letter)
 
-    gs = game.guesses
-    |> MapSet.new()
-    |> MapSet.put(letter)
-    |> MapSet.to_list
+    pinfo = Map.get(game, player, default_player())
+    |> Map.update(:guesses, MapSet.new(), &(MapSet.put(&1, letter)))
+    |> Map.put(:cooldown, :os.system_time(:milli_seconds) + 10_000)
 
-    Map.put(game, :guesses, gs)
+    game
+    |> Map.put(:guesses, guesses)
+    |> Map.update(:players, %{}, &(Map.put(&1, player, pinfo)))
   end
 
   def max_guesses do
