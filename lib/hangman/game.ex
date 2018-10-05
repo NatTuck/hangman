@@ -1,7 +1,9 @@
 defmodule Hangman.Game do
   def new do
+    word = next_word()
+    IO.inspect({:word, word})
     %{
-      word: next_word(),
+      word: word,
       guesses: MapSet.new(),
       players: %{},
     }
@@ -9,7 +11,7 @@ defmodule Hangman.Game do
 
   def new(players) do
     players = Enum.map players, fn {name, info} ->
-      {name, %{ score: info.score || 0 }}
+      {name, %{ default_player() | score: info.score || 0 }}
     end
     Map.put(new(), :players, Enum.into(players, %{}))
   end
@@ -23,7 +25,7 @@ defmodule Hangman.Game do
   end
 
   def get_cd(game, user) do
-    done = (get_in(ps, [user, :cooldown]) || 0)
+    done = (get_in(game.players, [user, :cooldown]) || 0)
     left = done - :os.system_time(:milli_seconds)
     max(left, 0)
   end
@@ -31,7 +33,9 @@ defmodule Hangman.Game do
   def client_view(game, user) do
     ws = String.graphemes(game.word)
     gs = game.guesses
-    ps = game.players
+    ps = Enum.map game.players, fn {pn, pi} ->
+      %{ name: pn, guesses: Enum.into(pi.guesses, []), score: pi.score }
+    end
 
     %{
       skel: skeleton(ws, gs),

@@ -35,7 +35,7 @@ class Hangman extends React.Component {
     super(props);
 
     this.channel = props.channel;
-    this.state = { skel: [], goods: [], bads: [], max: 10 };
+    this.state = { skel: [], goods: [], bads: [], max: 10, cooldown: 0, players: [] };
 
     this.channel.join()
         .receive("ok", this.gotView.bind(this))
