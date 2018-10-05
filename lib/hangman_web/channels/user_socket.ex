@@ -22,7 +22,7 @@ defmodule HangmanWeb.UserSocket do
       {:ok, user} ->
         IO.puts("socket connect from user = #{user}")
         {:ok, assign(socket, :user, user)}
-      {:error, reason} ->
+      {:error, _reason} ->
         :error
     end
   end

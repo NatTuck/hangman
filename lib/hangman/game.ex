@@ -22,11 +22,16 @@ defmodule Hangman.Game do
     }
   end
 
+  def get_cd(game, user) do
+    done = (get_in(ps, [user, :cooldown]) || 0)
+    left = done - :os.system_time(:milli_seconds)
+    max(left, 0)
+  end
+
   def client_view(game, user) do
     ws = String.graphemes(game.word)
     gs = game.guesses
     ps = game.players
-    cd = :os.system_time(:milli_seconds) - (ps[user].cooldown || 0)
 
     %{
       skel: skeleton(ws, gs),
@@ -34,7 +39,7 @@ defmodule Hangman.Game do
       bads: Enum.filter(gs, &(!Enum.member?(ws, &1))),
       max: max_guesses(),
       players: ps,
-      cooldown: max(cd, 0),
+      cooldown: get_cd(game, user),
     }
   end
 
@@ -49,15 +54,20 @@ defmodule Hangman.Game do
   end
 
   def guess(game, player, letter) do
-    guesses = MapSet.put(game.guesses, letter)
+    if get_cd(game, player) > 0 do
+      # on cooldown
+      game
+    else
+      guesses = MapSet.put(game.guesses, letter)
 
-    pinfo = Map.get(game, player, default_player())
-    |> Map.update(:guesses, MapSet.new(), &(MapSet.put(&1, letter)))
-    |> Map.put(:cooldown, :os.system_time(:milli_seconds) + 10_000)
+      pinfo = Map.get(game, player, default_player())
+      |> Map.update(:guesses, MapSet.new(), &(MapSet.put(&1, letter)))
+      |> Map.put(:cooldown, :os.system_time(:milli_seconds) + 10_000)
 
-    game
-    |> Map.put(:guesses, guesses)
-    |> Map.update(:players, %{}, &(Map.put(&1, player, pinfo)))
+      game
+      |> Map.put(:guesses, guesses)
+      |> Map.update(:players, %{}, &(Map.put(&1, player, pinfo)))
+    end
   end
 
   def max_guesses do

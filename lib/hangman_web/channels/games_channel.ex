@@ -1,7 +1,6 @@
 defmodule HangmanWeb.GamesChannel do
   use HangmanWeb, :channel
 
-  alias Hangman.Game
   alias Hangman.GameServer
 
   def join("games:" <> game, payload, socket) do

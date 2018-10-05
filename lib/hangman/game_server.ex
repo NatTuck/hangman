@@ -29,6 +29,7 @@ defmodule Hangman.GameServer do
   def handle_call({:guess, game, user, letter}, _from, state) do
     gg = Map.get(state, game, Game.new)
     |> Game.guess(user, letter)
-    {:reply, Game.client_view(gg, user), Map.put(state, game, gg)}
+    vv = Game.client_view(gg, user)
+    {:reply, vv, Map.put(state, game, gg)}
   end
 end
