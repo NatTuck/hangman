@@ -1,7 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import _ from 'lodash';
-import randomWords from 'random-words';
 
 /*
    * There is a secret word.
@@ -40,6 +39,8 @@ class Hangman extends React.Component {
     this.channel.join()
         .receive("ok", this.gotView.bind(this))
         .receive("error", resp => { console.log("Unable to join", resp) });
+
+    this.channel.on("update", this.gotView.bind(this))
   }
 
   gotView(view) {
